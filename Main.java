@@ -6,6 +6,7 @@ import java.io.File;
 import java.io.IOException;
 import javax.imageio.ImageIO;
 import javax.swing.filechooser.FileNameExtensionFilter;
+import javax.swing.border.*;
 
 public class Main extends JFrame {
     private DrawPanel drawPanel;
@@ -19,8 +20,12 @@ public class Main extends JFrame {
     public Main() {
         setTitle("Простой графический редактор");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(800, 600);
+        // Устанавливаем более широкий размер окна
+        setSize(1200, 700); // Ширина 1200, высота 700
         setLocationRelativeTo(null);
+        
+        // Устанавливаем небесно-голубой фон для всего приложения
+        getContentPane().setBackground(new Color(135, 206, 235));
         
         initializeComponents();
         setupLayout();
@@ -58,6 +63,11 @@ public class Main extends JFrame {
         // Панель инструментов
         JPanel toolPanel = new JPanel();
         toolPanel.setLayout(new FlowLayout());
+        toolPanel.setBackground(new Color(176, 224, 230)); // Светлый голубой для панели инструментов
+        toolPanel.setBorder(new CompoundBorder(
+            new LineBorder(new Color(70, 130, 180), 1),
+            new EmptyBorder(5, 5, 5, 5)
+        ));
         
         toolPanel.add(newButton);
         toolPanel.add(openButton);
@@ -73,10 +83,23 @@ public class Main extends JFrame {
         toolPanel.add(new JLabel("Размер:"));
         toolPanel.add(sizeComboBox);
         
+        // Панель для холста с рамкой
+        JPanel canvasPanel = new JPanel(new BorderLayout());
+        canvasPanel.setBackground(new Color(135, 206, 235)); // Небесно-голубой фон вокруг холста
+        canvasPanel.setBorder(BorderFactory.createTitledBorder(
+            BorderFactory.createLineBorder(new Color(70, 130, 180), 2),
+            "Холст",
+            TitledBorder.CENTER,
+            TitledBorder.TOP,
+            new Font("Arial", Font.BOLD, 12),
+            new Color(25, 25, 112)
+        ));
+        canvasPanel.add(drawPanel, BorderLayout.CENTER);
+        
         // Основной layout
         setLayout(new BorderLayout());
         add(toolPanel, BorderLayout.NORTH);
-        add(drawPanel, BorderLayout.CENTER);
+        add(canvasPanel, BorderLayout.CENTER);
     }
 
     private void setupEventListeners() {
@@ -116,10 +139,12 @@ public class Main extends JFrame {
     }
 
     private void updateButtonStates() {
-        pencilButton.setBackground(currentTool.equals("pencil") ? Color.LIGHT_GRAY : null);
-        eraserButton.setBackground(currentTool.equals("eraser") ? Color.LIGHT_GRAY : null);
-        selectButton.setBackground(currentTool.equals("select") ? Color.LIGHT_GRAY : null);
-        cropButton.setBackground(null);
+        Color activeColor = new Color(100, 149, 237); // Цвет активной кнопки
+        
+        pencilButton.setBackground(currentTool.equals("pencil") ? activeColor : new Color(176, 224, 230));
+        eraserButton.setBackground(currentTool.equals("eraser") ? activeColor : new Color(176, 224, 230));
+        selectButton.setBackground(currentTool.equals("select") ? activeColor : new Color(176, 224, 230));
+        cropButton.setBackground(new Color(176, 224, 230));
         
         drawPanel.setCurrentTool(currentTool);
     }
@@ -161,12 +186,38 @@ public class Main extends JFrame {
     }
 
     private void createNewCanvas() {
-        int result = JOptionPane.showConfirmDialog(this, 
-            "Создать новый холст? Несохраненные изменения будут потеряны.", 
-            "Новый файл", JOptionPane.YES_NO_OPTION);
+        // Диалог для выбора размера нового холста
+        JPanel sizePanel = new JPanel(new GridLayout(2, 2, 5, 5));
+        JTextField widthField = new JTextField("1000"); // Увеличил стандартную ширину
+        JTextField heightField = new JTextField("600"); // Увеличил стандартную высоту
         
-        if (result == JOptionPane.YES_OPTION) {
-            drawPanel.clearCanvas();
+        sizePanel.add(new JLabel("Ширина:"));
+        sizePanel.add(widthField);
+        sizePanel.add(new JLabel("Высота:"));
+        sizePanel.add(heightField);
+        
+        int result = JOptionPane.showConfirmDialog(this, 
+            sizePanel, 
+            "Создать новый холст", 
+            JOptionPane.OK_CANCEL_OPTION);
+        
+        if (result == JOptionPane.OK_OPTION) {
+            try {
+                int width = Integer.parseInt(widthField.getText());
+                int height = Integer.parseInt(heightField.getText());
+                
+                if (width > 0 && height > 0) {
+                    drawPanel.createNewCanvas(width, height);
+                } else {
+                    JOptionPane.showMessageDialog(this, 
+                        "Размеры должны быть положительными числами", 
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
+                }
+            } catch (NumberFormatException ex) {
+                JOptionPane.showMessageDialog(this, 
+                    "Введите корректные числовые значения", 
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
@@ -235,13 +286,12 @@ public class Main extends JFrame {
 
         public DrawPanel() {
             setBackground(Color.WHITE);
-            setPreferredSize(new Dimension(800, 500));
+            // Увеличил начальный размер холста
+            setPreferredSize(new Dimension(1000, 600));
+            setBorder(BorderFactory.createLineBorder(new Color(70, 130, 180), 2));
             
             // Инициализация холста
-            canvas = new BufferedImage(800, 500, BufferedImage.TYPE_INT_ARGB);
-            g2d = canvas.createGraphics();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-            clearCanvas();
+            createNewCanvas(1000, 600);
             
             // Обработчики мыши
             addMouseListener(new MouseAdapter() {
@@ -309,26 +359,59 @@ public class Main extends JFrame {
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
-            g.drawImage(canvas, 0, 0, null);
             
-            // Рисование выделения
+            // Рисуем белый фон для области холста
+            g.setColor(Color.WHITE);
+            g.fillRect(0, 0, getWidth(), getHeight());
+            
+            // Рисуем изображение
+            if (canvas != null) {
+                g.drawImage(canvas, 0, 0, null);
+            }
+            
+            // Рисование выделения с улучшенной видимостью
             if (currentTool.equals("select") && selectionRect != null && 
                 selectionRect.width > 0 && selectionRect.height > 0) {
                 Graphics2D g2 = (Graphics2D) g.create();
-                g2.setColor(new Color(0, 120, 215, 50));
+                
+                // Полупрозрачная заливка
+                g2.setColor(new Color(0, 120, 215, 80));
                 g2.fill(selectionRect);
+                
+                // Пунктирная граница
                 g2.setColor(new Color(0, 120, 215));
-                g2.setStroke(new BasicStroke(1, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 
-                    0, new float[]{3}, 0));
+                g2.setStroke(new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 
+                    0, new float[]{5, 5}, 0));
                 g2.draw(selectionRect);
+                
+                // Отображение размеров
+                g2.setColor(Color.BLACK);
+                g2.setFont(new Font("Arial", Font.BOLD, 12));
+                String sizeText = selectionRect.width + " x " + selectionRect.height;
+                g2.drawString(sizeText, 
+                    selectionRect.x + 5, 
+                    selectionRect.y + selectionRect.height - 5);
+                
                 g2.dispose();
             }
         }
 
+        public void createNewCanvas(int width, int height) {
+            canvas = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+            g2d = canvas.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            clearCanvas();
+            setPreferredSize(new Dimension(width, height));
+            revalidate();
+            repaint();
+        }
+
         public void clearCanvas() {
-            g2d.setColor(Color.WHITE);
-            g2d.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-            g2d.setColor(currentColor != null ? currentColor : Color.BLACK);
+            if (g2d != null) {
+                g2d.setColor(Color.WHITE);
+                g2d.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
+                g2d.setColor(currentColor != null ? currentColor : Color.BLACK);
+            }
             selectionRect = null;
             repaint();
         }
@@ -339,14 +422,8 @@ public class Main extends JFrame {
 
         public void openImage(File file) throws IOException {
             BufferedImage image = ImageIO.read(file);
-            // Создаем новый холст размером с открываемое изображение
-            canvas = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
-            g2d = canvas.createGraphics();
-            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            createNewCanvas(image.getWidth(), image.getHeight());
             g2d.drawImage(image, 0, 0, null);
-            setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
-            revalidate();
-            selectionRect = null;
             repaint();
         }
 
@@ -358,48 +435,87 @@ public class Main extends JFrame {
                 return;
             }
 
-            int result = JOptionPane.showConfirmDialog(Main.this, 
-                "Обрезать изображение по выделенной области? Это действие нельзя отменить.", 
-                "Подтверждение обрезки", JOptionPane.YES_NO_OPTION);
+            // Показываем предпросмотр обрезки
+            JDialog previewDialog = new JDialog(Main.this, "Предпросмотр обрезки", true);
+            previewDialog.setLayout(new BorderLayout());
+            previewDialog.setSize(500, 400); // Увеличил размер окна предпросмотра
+            previewDialog.setLocationRelativeTo(Main.this);
             
-            if (result == JOptionPane.YES_OPTION) {
-                try {
-                    // Создаем новое изображение размером с выделенную область
-                    BufferedImage croppedImage = new BufferedImage(
-                        selectionRect.width, selectionRect.height, BufferedImage.TYPE_INT_ARGB);
+            JLabel previewLabel = new JLabel();
+            previewLabel.setHorizontalAlignment(SwingConstants.CENTER);
+            previewLabel.setBorder(BorderFactory.createLineBorder(Color.BLACK, 2));
+            
+            // Создаем предпросмотр
+            BufferedImage previewImage = canvas.getSubimage(
+                selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
+            ImageIcon icon = new ImageIcon(previewImage.getScaledInstance(
+                Math.min(450, previewImage.getWidth()), 
+                Math.min(300, previewImage.getHeight()), 
+                Image.SCALE_SMOOTH));
+            previewLabel.setIcon(icon);
+            
+            JLabel infoLabel = new JLabel(
+                "Новый размер: " + selectionRect.width + " x " + selectionRect.height, 
+                SwingConstants.CENTER);
+            infoLabel.setFont(new Font("Arial", Font.BOLD, 14));
+            
+            JPanel buttonPanel = new JPanel();
+            JButton confirmButton = new JButton("Подтвердить обрезку");
+            JButton cancelButton = new JButton("Отмена");
+            
+            confirmButton.addActionListener(e -> {
+                performCrop();
+                previewDialog.dispose();
+            });
+            
+            cancelButton.addActionListener(e -> previewDialog.dispose());
+            
+            buttonPanel.add(confirmButton);
+            buttonPanel.add(cancelButton);
+            
+            previewDialog.add(infoLabel, BorderLayout.NORTH);
+            previewDialog.add(previewLabel, BorderLayout.CENTER);
+            previewDialog.add(buttonPanel, BorderLayout.SOUTH);
+            previewDialog.setVisible(true);
+        }
+
+        private void performCrop() {
+            try {
+                // Создаем новое изображение размером с выделенную область
+                BufferedImage croppedImage = new BufferedImage(
+                    selectionRect.width, selectionRect.height, BufferedImage.TYPE_INT_ARGB);
+                
+                Graphics2D g2dCropped = croppedImage.createGraphics();
+                g2dCropped.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Копируем выделенную область в новое изображение
+                g2dCropped.drawImage(canvas, 
+                    0, 0, selectionRect.width, selectionRect.height,
+                    selectionRect.x, selectionRect.y, 
+                    selectionRect.x + selectionRect.width, selectionRect.y + selectionRect.height,
+                    null);
+                g2dCropped.dispose();
+                
+                // Заменяем текущий холст обрезанным изображением
+                canvas = croppedImage;
+                g2d = canvas.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                
+                // Обновляем размер панели
+                setPreferredSize(new Dimension(selectionRect.width, selectionRect.height));
+                revalidate();
+                
+                selectionRect = null;
+                repaint();
+                
+                JOptionPane.showMessageDialog(Main.this, 
+                    "Изображение успешно обрезано!", 
+                    "Обрезка завершена", JOptionPane.INFORMATION_MESSAGE);
                     
-                    Graphics2D g2dCropped = croppedImage.createGraphics();
-                    g2dCropped.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    
-                    // Копируем выделенную область в новое изображение
-                    g2dCropped.drawImage(canvas, 
-                        0, 0, selectionRect.width, selectionRect.height,
-                        selectionRect.x, selectionRect.y, 
-                        selectionRect.x + selectionRect.width, selectionRect.y + selectionRect.height,
-                        null);
-                    g2dCropped.dispose();
-                    
-                    // Заменяем текущий холст обрезанным изображением
-                    canvas = croppedImage;
-                    g2d = canvas.createGraphics();
-                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                    
-                    // Обновляем размер панели
-                    setPreferredSize(new Dimension(selectionRect.width, selectionRect.height));
-                    revalidate();
-                    
-                    selectionRect = null;
-                    repaint();
-                    
-                    JOptionPane.showMessageDialog(Main.this, 
-                        "Изображение успешно обрезано!", 
-                        "Обрезка завершена", JOptionPane.INFORMATION_MESSAGE);
-                        
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(Main.this, 
-                        "Ошибка при обрезке: " + ex.getMessage(), 
-                        "Ошибка", JOptionPane.ERROR_MESSAGE);
-                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(Main.this, 
+                    "Ошибка при обрезке: " + ex.getMessage(), 
+                    "Ошибка", JOptionPane.ERROR_MESSAGE);
             }
         }
 
