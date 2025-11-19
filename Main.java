@@ -14,7 +14,7 @@ import java.util.Stack;
 public class Main extends JFrame {
     private DrawPanel drawPanel;
     private JButton pencilButton, eraserButton, selectButton, newButton, saveButton, openButton, cropButton;
-    private JButton filtersButton, brightnessButton, blurButton, sharpenButton, grayscaleButton, invertButton;
+    private JButton brightnessButton, blurButton, sharpenButton, grayscaleButton, invertButton;
     private JButton sepiaButton, vintageButton, coolButton, warmButton, saturationButton, contrastButton;
     private JButton undoButton, redoButton;
     private JComboBox<String> colorComboBox;
@@ -37,7 +37,7 @@ public class Main extends JFrame {
     }
 
     private void initializeComponents() {
-        drawPanel = new DrawPanel(this); // Передаем ссылку на Main
+        drawPanel = new DrawPanel(this);
         
         // Создание кнопок инструментов
         pencilButton = new JButton("Карандаш");
@@ -50,8 +50,7 @@ public class Main extends JFrame {
         undoButton = new JButton("Отмена");
         redoButton = new JButton("Повтор");
         
-        // Кнопки фильтров
-        filtersButton = new JButton("Галерея фильтров");
+        // Кнопки фильтров (убран filtersButton)
         brightnessButton = new JButton("Яркость");
         blurButton = new JButton("Размытие");
         sharpenButton = new JButton("Резкость");
@@ -64,7 +63,7 @@ public class Main extends JFrame {
         saturationButton = new JButton("Насыщенность");
         contrastButton = new JButton("Контраст");
         
-        // Настройка комбобоксов с 24 цветами
+        // Настройка комбобоксов
         String[] colors = {
             "Черный", "Белый", "Красный", "Зеленый", "Синий", "Желтый",
             "Оранжевый", "Розовый", "Фиолетовый", "Коричневый", "Серый",
@@ -105,19 +104,18 @@ public class Main extends JFrame {
         toolPanel.add(new JLabel("Размер:"));
         toolPanel.add(sizeComboBox);
         
-        // Панель фильтров - первая строка
+        // Панель фильтров
         JPanel filtersPanel1 = new JPanel();
         filtersPanel1.setLayout(new FlowLayout());
         filtersPanel1.setBackground(new Color(200, 230, 255));
         
-        filtersPanel1.add(filtersButton);
+        // Убрана кнопка filtersButton
         filtersPanel1.add(brightnessButton);
         filtersPanel1.add(blurButton);
         filtersPanel1.add(sharpenButton);
         filtersPanel1.add(grayscaleButton);
         filtersPanel1.add(invertButton);
         
-        // Панель фильтров - вторая строка
         JPanel filtersPanel2 = new JPanel();
         filtersPanel2.setLayout(new FlowLayout());
         filtersPanel2.setBackground(new Color(200, 230, 255));
@@ -129,7 +127,6 @@ public class Main extends JFrame {
         filtersPanel2.add(saturationButton);
         filtersPanel2.add(contrastButton);
         
-        // Объединяем панели фильтров
         JPanel filtersPanel = new JPanel(new BorderLayout());
         filtersPanel.setBackground(new Color(200, 230, 255));
         filtersPanel.setBorder(BorderFactory.createTitledBorder(
@@ -143,7 +140,7 @@ public class Main extends JFrame {
         filtersPanel.add(filtersPanel1, BorderLayout.NORTH);
         filtersPanel.add(filtersPanel2, BorderLayout.SOUTH);
         
-        // Панель для холста с прокруткой
+        // Панель для холста
         JPanel canvasPanel = new JPanel(new BorderLayout());
         canvasPanel.setBackground(new Color(135, 206, 235));
         canvasPanel.setBorder(BorderFactory.createTitledBorder(
@@ -164,7 +161,6 @@ public class Main extends JFrame {
         
         canvasPanel.add(scrollPane, BorderLayout.CENTER);
         
-        // Основной layout
         setLayout(new BorderLayout());
         add(toolPanel, BorderLayout.NORTH);
         add(filtersPanel, BorderLayout.SOUTH);
@@ -172,7 +168,6 @@ public class Main extends JFrame {
     }
 
     private void setupEventListeners() {
-        // Кнопки инструментов
         pencilButton.addActionListener(e -> {
             currentTool = "pencil";
             updateButtonStates();
@@ -188,16 +183,12 @@ public class Main extends JFrame {
             updateButtonStates();
         });
         
-        cropButton.addActionListener(e -> {
-            drawPanel.cropSelection();
-        });
+        cropButton.addActionListener(e -> drawPanel.cropSelection());
         
-        // Кнопки отмены/повтора
         undoButton.addActionListener(e -> drawPanel.undo());
         redoButton.addActionListener(e -> drawPanel.redo());
         
-        // Кнопки фильтров
-        filtersButton.addActionListener(e -> showFiltersDialog());
+        // Убран слушатель для filtersButton
         brightnessButton.addActionListener(e -> showBrightnessDialog());
         blurButton.addActionListener(e -> drawPanel.applyBlurFilter());
         sharpenButton.addActionListener(e -> drawPanel.applySharpenFilter());
@@ -210,26 +201,22 @@ public class Main extends JFrame {
         saturationButton.addActionListener(e -> showSaturationDialog());
         contrastButton.addActionListener(e -> showContrastDialog());
         
-        // Кнопки файловых операций
         newButton.addActionListener(e -> createNewCanvas());
         saveButton.addActionListener(e -> saveImage());
         openButton.addActionListener(e -> openImage());
         
-        // Комбобоксы
         colorComboBox.addActionListener(e -> updateColor());
         sizeComboBox.addActionListener(e -> updateSize());
         
-        // Передача текущего инструмента на панель рисования
         drawPanel.setCurrentTool(currentTool);
         drawPanel.setCurrentColor(currentColor);
         drawPanel.setCurrentSize(currentSize);
         
-        // Инициализируем состояния кнопок
         updateButtonStates();
     }
 
     public void updateButtonStates() {
-        if (undoButton == null || redoButton == null) return; // Защита от NPE
+        if (undoButton == null || redoButton == null) return;
         
         Color activeColor = new Color(100, 149, 237);
         
@@ -238,7 +225,6 @@ public class Main extends JFrame {
         selectButton.setBackground(currentTool.equals("select") ? activeColor : new Color(176, 224, 230));
         cropButton.setBackground(new Color(176, 224, 230));
         
-        // Обновляем состояние кнопок отмены/повтора
         undoButton.setEnabled(drawPanel.canUndo());
         redoButton.setEnabled(drawPanel.canRedo());
     }
@@ -277,112 +263,6 @@ public class Main extends JFrame {
     private void updateSize() {
         currentSize = (Integer) sizeComboBox.getSelectedItem();
         drawPanel.setCurrentSize(currentSize);
-    }
-
-    private void showFiltersDialog() {
-        JDialog filtersDialog = new JDialog(this, "Галерея фильтров", true);
-        filtersDialog.setLayout(new BorderLayout());
-        filtersDialog.setSize(700, 500);
-        filtersDialog.setLocationRelativeTo(this);
-        
-        JPanel previewPanel = new JPanel(new GridLayout(3, 4, 10, 10));
-        previewPanel.setBorder(new EmptyBorder(10, 10, 10, 10));
-        previewPanel.setBackground(new Color(240, 248, 255));
-        
-        String[] filterNames = {
-            "Оригинал", "Ч/Б", "Сепия", "Инверсия", 
-            "Размытие", "Резкость", "Винтаж", "Холодный",
-            "Теплый", "Высокая насыщенность", "Высокий контраст", "Низкая насыщенность"
-        };
-        Runnable[] filterActions = {
-            () -> drawPanel.applyOriginal(),
-            () -> drawPanel.applyGrayscaleFilter(),
-            () -> drawPanel.applySepiaFilter(),
-            () -> drawPanel.applyInvertFilter(),
-            () -> drawPanel.applyBlurFilter(),
-            () -> drawPanel.applySharpenFilter(),
-            () -> drawPanel.applyVintageFilter(),
-            () -> drawPanel.applyCoolFilter(),
-            () -> drawPanel.applyWarmFilter(),
-            () -> drawPanel.applyHighSaturationFilter(),
-            () -> drawPanel.applyHighContrastFilter(),
-            () -> drawPanel.applyLowSaturationFilter()
-        };
-        
-        for (int i = 0; i < filterNames.length; i++) {
-            JPanel filterPanel = createFilterPreview(filterNames[i], filterActions[i]);
-            previewPanel.add(filterPanel);
-        }
-        
-        JButton closeButton = new JButton("Закрыть");
-        closeButton.addActionListener(e -> filtersDialog.dispose());
-        
-        filtersDialog.add(new JLabel("Выберите фильтр:", SwingConstants.CENTER), BorderLayout.NORTH);
-        filtersDialog.add(new JScrollPane(previewPanel), BorderLayout.CENTER);
-        filtersDialog.add(closeButton, BorderLayout.SOUTH);
-        filtersDialog.setVisible(true);
-    }
-    
-    private JPanel createFilterPreview(String filterName, Runnable filterAction) {
-        JPanel panel = new JPanel(new BorderLayout());
-        panel.setBackground(Color.WHITE);
-        panel.setBorder(BorderFactory.createLineBorder(Color.GRAY, 1));
-        
-        JLabel previewLabel = new JLabel();
-        previewLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        previewLabel.setPreferredSize(new Dimension(120, 100));
-        
-        BufferedImage thumbnail = drawPanel.createThumbnail();
-        if (thumbnail != null) {
-            BufferedImage filteredThumbnail = applyFilterToImage(thumbnail, filterName);
-            previewLabel.setIcon(new ImageIcon(filteredThumbnail));
-        }
-        
-        JButton applyButton = new JButton(filterName);
-        applyButton.setFont(new Font("Arial", Font.PLAIN, 10));
-        applyButton.addActionListener(e -> {
-            filterAction.run();
-            ((Window) SwingUtilities.getWindowAncestor(panel)).dispose();
-        });
-        
-        panel.add(previewLabel, BorderLayout.CENTER);
-        panel.add(applyButton, BorderLayout.SOUTH);
-        
-        return panel;
-    }
-    
-    private BufferedImage applyFilterToImage(BufferedImage image, String filterName) {
-        BufferedImage result = new BufferedImage(image.getWidth(), image.getHeight(), image.getType());
-        Graphics2D g2d = result.createGraphics();
-        g2d.drawImage(image, 0, 0, null);
-        g2d.dispose();
-        
-        switch (filterName) {
-            case "Ч/Б":
-                return applyGrayscale(result);
-            case "Сепия":
-                return applySepia(result);
-            case "Инверсия":
-                return applyInvert(result);
-            case "Размытие":
-                return applyBlur(result, 3);
-            case "Резкость":
-                return applySharpen(result);
-            case "Винтаж":
-                return applyVintage(result);
-            case "Холодный":
-                return applyCool(result);
-            case "Теплый":
-                return applyWarm(result);
-            case "Высокая насыщенность":
-                return adjustSaturation(result, 1.5f);
-            case "Низкая насыщенность":
-                return adjustSaturation(result, 0.5f);
-            case "Высокий контраст":
-                return adjustContrast(result, 1.5f);
-            default:
-                return result;
-        }
     }
     
     private void showBrightnessDialog() {
@@ -721,7 +601,7 @@ public class Main extends JFrame {
     }
 
     class DrawPanel extends JPanel {
-        private Main main; // Ссылка на главное окно
+        private Main main;
         private BufferedImage canvas;
         private BufferedImage originalCanvas;
         private Graphics2D g2d;
@@ -736,7 +616,7 @@ public class Main extends JFrame {
         private static final int MAX_HISTORY = 20;
 
         public DrawPanel(Main main) {
-            this.main = main; // Сохраняем ссылку на главное окно
+            this.main = main;
             setBackground(Color.WHITE);
             setPreferredSize(new Dimension(1000, 600));
             setBorder(BorderFactory.createLineBorder(new Color(70, 130, 180), 2));
@@ -746,8 +626,10 @@ public class Main extends JFrame {
             addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
-                    startX = e.getX();
-                    startY = e.getY();
+                    // Получаем координаты относительно реального размера холста
+                    Point relativePoint = getRelativePoint(e.getPoint());
+                    startX = relativePoint.x;
+                    startY = relativePoint.y;
                     
                     if (currentTool.equals("select")) {
                         selectionRect = new Rectangle(startX, startY, 0, 0);
@@ -761,7 +643,6 @@ public class Main extends JFrame {
                             System.out.println("Выделена область: " + selectionRect);
                         }
                     }
-                    // Сохраняем состояние для отмены после рисования
                     if (currentTool.equals("pencil") || currentTool.equals("eraser")) {
                         saveState();
                     }
@@ -772,8 +653,10 @@ public class Main extends JFrame {
             addMouseMotionListener(new MouseMotionAdapter() {
                 @Override
                 public void mouseDragged(MouseEvent e) {
-                    int x = e.getX();
-                    int y = e.getY();
+                    // Получаем координаты относительно реального размера холста
+                    Point relativePoint = getRelativePoint(e.getPoint());
+                    int x = relativePoint.x;
+                    int y = relativePoint.y;
                     
                     switch (currentTool) {
                         case "pencil":
@@ -808,33 +691,69 @@ public class Main extends JFrame {
             });
         }
 
+        // Метод для преобразования координат мыши в координаты холста
+        private Point getRelativePoint(Point mousePoint) {
+            if (canvas == null) return mousePoint;
+            
+            // Получаем реальные размеры компонента и изображения
+            int compWidth = getWidth();
+            int compHeight = getHeight();
+            int imgWidth = canvas.getWidth();
+            int imgHeight = canvas.getHeight();
+            
+            // Вычисляем масштаб
+            double scaleX = (double) imgWidth / compWidth;
+            double scaleY = (double) imgHeight / compHeight;
+            
+            // Преобразуем координаты
+            int x = (int) (mousePoint.x * scaleX);
+            int y = (int) (mousePoint.y * scaleY);
+            
+            // Ограничиваем координаты размерами изображения
+            x = Math.max(0, Math.min(x, imgWidth - 1));
+            y = Math.max(0, Math.min(y, imgHeight - 1));
+            
+            return new Point(x, y);
+        }
+
         @Override
         protected void paintComponent(Graphics g) {
             super.paintComponent(g);
             
+            // Заливаем всю область компонента белым цветом
             g.setColor(Color.WHITE);
             g.fillRect(0, 0, getWidth(), getHeight());
             
+            // Рисуем изображение, растягивая его на всю доступную область
             if (canvas != null) {
-                g.drawImage(canvas, 0, 0, null);
+                g.drawImage(canvas, 0, 0, getWidth(), getHeight(), null);
             }
             
             if (currentTool.equals("select") && selectionRect != null && 
                 selectionRect.width > 0 && selectionRect.height > 0) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 
+                // Преобразуем координаты выделения для отображения
+                double scaleX = (double) getWidth() / canvas.getWidth();
+                double scaleY = (double) getHeight() / canvas.getHeight();
+                
+                int displayX = (int) (selectionRect.x * scaleX);
+                int displayY = (int) (selectionRect.y * scaleY);
+                int displayWidth = (int) (selectionRect.width * scaleX);
+                int displayHeight = (int) (selectionRect.height * scaleY);
+                
                 g2.setColor(new Color(0, 120, 215, 80));
-                g2.fill(selectionRect);
+                g2.fillRect(displayX, displayY, displayWidth, displayHeight);
                 
                 g2.setColor(new Color(0, 120, 215));
                 g2.setStroke(new BasicStroke(2, BasicStroke.CAP_BUTT, BasicStroke.JOIN_BEVEL, 
                     0, new float[]{5, 5}, 0));
-                g2.draw(selectionRect);
+                g2.drawRect(displayX, displayY, displayWidth, displayHeight);
                 
                 g2.setColor(Color.BLACK);
                 g2.setFont(new Font("Arial", Font.BOLD, 12));
                 String sizeText = selectionRect.width + " x " + selectionRect.height;
-                g2.drawString(sizeText, selectionRect.x + 5, selectionRect.y + selectionRect.height - 5);
+                g2.drawString(sizeText, displayX + 5, displayY + displayHeight - 5);
                 
                 g2.dispose();
             }
@@ -875,10 +794,7 @@ public class Main extends JFrame {
 
         private void saveOriginal() {
             if (canvas != null) {
-                originalCanvas = new BufferedImage(canvas.getWidth(), canvas.getHeight(), canvas.getType());
-                Graphics2D g = originalCanvas.createGraphics();
-                g.drawImage(canvas, 0, 0, null);
-                g.dispose();
+                originalCanvas = copyImage(canvas);
             }
         }
 
@@ -891,20 +807,14 @@ public class Main extends JFrame {
 
         private void saveState() {
             if (canvas != null) {
-                BufferedImage state = new BufferedImage(canvas.getWidth(), canvas.getHeight(), canvas.getType());
-                Graphics2D g = state.createGraphics();
-                g.drawImage(canvas, 0, 0, null);
-                g.dispose();
-                
+                BufferedImage state = copyImage(canvas);
                 undoStack.push(state);
                 redoStack.clear();
                 
-                // Ограничиваем размер истории
                 if (undoStack.size() > MAX_HISTORY) {
                     undoStack.remove(0);
                 }
                 
-                // Безопасно обновляем кнопки
                 if (main != null) {
                     SwingUtilities.invokeLater(() -> main.updateButtonStates());
                 }
@@ -915,7 +825,11 @@ public class Main extends JFrame {
             if (canUndo()) {
                 redoStack.push(copyImage(canvas));
                 BufferedImage previousState = undoStack.pop();
-                g2d.drawImage(previousState, 0, 0, null);
+                // Полностью заменяем canvas предыдущим состоянием
+                canvas = copyImage(previousState);
+                g2d = canvas.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                saveOriginal();
                 repaint();
                 if (main != null) {
                     main.updateButtonStates();
@@ -927,7 +841,11 @@ public class Main extends JFrame {
             if (canRedo()) {
                 undoStack.push(copyImage(canvas));
                 BufferedImage nextState = redoStack.pop();
-                g2d.drawImage(nextState, 0, 0, null);
+                // Полностью заменяем canvas следующим состоянием
+                canvas = copyImage(nextState);
+                g2d = canvas.createGraphics();
+                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                saveOriginal();
                 repaint();
                 if (main != null) {
                     main.updateButtonStates();
@@ -978,18 +896,27 @@ public class Main extends JFrame {
         private void applyBrightness(int value, boolean permanent) {
             float factor = 1.0f + value / 100.0f;
             
-            for (int x = 0; x < canvas.getWidth(); x++) {
-                for (int y = 0; y < canvas.getHeight(); y++) {
-                    Color color = new Color(canvas.getRGB(x, y), true);
+            // Создаем временное изображение для применения фильтра
+            BufferedImage temp = new BufferedImage(canvas.getWidth(), canvas.getHeight(), canvas.getType());
+            Graphics2D tempG2d = temp.createGraphics();
+            tempG2d.drawImage(canvas, 0, 0, null);
+            tempG2d.dispose();
+            
+            for (int x = 0; x < temp.getWidth(); x++) {
+                for (int y = 0; y < temp.getHeight(); y++) {
+                    Color color = new Color(temp.getRGB(x, y), true);
                     int r = Math.min(255, Math.max(0, (int)(color.getRed() * factor)));
                     int g = Math.min(255, Math.max(0, (int)(color.getGreen() * factor)));
                     int b = Math.min(255, Math.max(0, (int)(color.getBlue() * factor)));
                     int a = color.getAlpha();
                     
                     Color newColor = new Color(r, g, b, a);
-                    canvas.setRGB(x, y, newColor.getRGB());
+                    temp.setRGB(x, y, newColor.getRGB());
                 }
             }
+            
+            // Применяем отфильтрованное изображение
+            g2d.drawImage(temp, 0, 0, null);
             
             if (permanent) {
                 saveOriginal();
@@ -1000,106 +927,108 @@ public class Main extends JFrame {
         public void applySaturationPreview(float saturation) {
             if (originalCanvas == null) saveOriginal();
             restoreOriginal();
-            canvas = adjustSaturation(canvas, saturation);
-            repaint();
+            applyFilterToCanvas(() -> canvas = adjustSaturation(canvas, saturation));
         }
 
         public void applySaturationFilter(float saturation) {
             saveState();
-            canvas = adjustSaturation(canvas, saturation);
+            applyFilterToCanvas(() -> canvas = adjustSaturation(canvas, saturation));
             saveOriginal();
-            repaint();
         }
 
         public void applyContrastPreview(float contrast) {
             if (originalCanvas == null) saveOriginal();
             restoreOriginal();
-            canvas = adjustContrast(canvas, contrast);
-            repaint();
+            applyFilterToCanvas(() -> canvas = adjustContrast(canvas, contrast));
         }
 
         public void applyContrastFilter(float contrast) {
             saveState();
-            canvas = adjustContrast(canvas, contrast);
+            applyFilterToCanvas(() -> canvas = adjustContrast(canvas, contrast));
             saveOriginal();
+        }
+
+        // Универсальный метод применения фильтров
+        private void applyFilterToCanvas(Runnable filterAction) {
+            // Создаем копию текущего состояния
+            BufferedImage originalState = copyImage(canvas);
+            
+            // Применяем фильтр
+            filterAction.run();
+            
+            // Обновляем Graphics2D и перерисовываем
+            g2d = canvas.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.drawImage(canvas, 0, 0, null);
+            
             repaint();
         }
 
+        // Методы применения фильтров
         public void applyBlurFilter() {
             saveState();
-            canvas = applyBlur(canvas, 3);
+            applyFilterToCanvas(() -> canvas = applyBlur(canvas, 3));
             saveOriginal();
-            repaint();
         }
 
         public void applySharpenFilter() {
             saveState();
-            canvas = applySharpen(canvas);
+            applyFilterToCanvas(() -> canvas = applySharpen(canvas));
             saveOriginal();
-            repaint();
         }
 
         public void applyGrayscaleFilter() {
             saveState();
-            canvas = applyGrayscale(canvas);
+            applyFilterToCanvas(() -> canvas = applyGrayscale(canvas));
             saveOriginal();
-            repaint();
         }
 
         public void applySepiaFilter() {
             saveState();
-            canvas = applySepia(canvas);
+            applyFilterToCanvas(() -> canvas = applySepia(canvas));
             saveOriginal();
-            repaint();
         }
 
         public void applyInvertFilter() {
             saveState();
-            canvas = applyInvert(canvas);
+            applyFilterToCanvas(() -> canvas = applyInvert(canvas));
             saveOriginal();
-            repaint();
         }
 
         public void applyVintageFilter() {
             saveState();
-            canvas = applyVintage(canvas);
+            applyFilterToCanvas(() -> canvas = applyVintage(canvas));
             saveOriginal();
-            repaint();
         }
 
         public void applyCoolFilter() {
             saveState();
-            canvas = applyCool(canvas);
+            applyFilterToCanvas(() -> canvas = applyCool(canvas));
             saveOriginal();
-            repaint();
         }
 
         public void applyWarmFilter() {
             saveState();
-            canvas = applyWarm(canvas);
+            applyFilterToCanvas(() -> canvas = applyWarm(canvas));
             saveOriginal();
-            repaint();
         }
 
         public void applyHighSaturationFilter() {
             saveState();
-            canvas = adjustSaturation(canvas, 1.5f);
+            applyFilterToCanvas(() -> canvas = adjustSaturation(canvas, 1.5f));
             saveOriginal();
-            repaint();
         }
 
         public void applyLowSaturationFilter() {
             saveState();
-            canvas = adjustSaturation(canvas, 0.5f);
+            applyFilterToCanvas(() -> canvas = adjustSaturation(canvas, 0.5f));
             saveOriginal();
-            repaint();
         }
 
         public void applyHighContrastFilter() {
             saveState();
-            canvas = adjustContrast(canvas, 1.5f);
+            applyFilterToCanvas(() -> canvas = adjustContrast(canvas, 1.5f));
             saveOriginal();
-            repaint();
         }
 
         public void applyOriginal() {
