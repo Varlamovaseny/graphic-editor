@@ -9,7 +9,7 @@ import javax.swing.filechooser.FileNameExtensionFilter;
 
 public class Main extends JFrame {
     private DrawPanel drawPanel;
-    private JButton pencilButton, eraserButton, selectButton, newButton, saveButton, openButton;
+    private JButton pencilButton, eraserButton, selectButton, newButton, saveButton, openButton, cropButton;
     private JComboBox<String> colorComboBox;
     private JComboBox<Integer> sizeComboBox;
     private String currentTool = "pencil";
@@ -34,6 +34,7 @@ public class Main extends JFrame {
         pencilButton = new JButton("Карандаш");
         eraserButton = new JButton("Ластик");
         selectButton = new JButton("Выделение");
+        cropButton = new JButton("Обрезать");
         newButton = new JButton("Новый");
         saveButton = new JButton("Сохранить");
         openButton = new JButton("Открыть");
@@ -65,6 +66,7 @@ public class Main extends JFrame {
         toolPanel.add(pencilButton);
         toolPanel.add(eraserButton);
         toolPanel.add(selectButton);
+        toolPanel.add(cropButton);
         toolPanel.add(new JSeparator(SwingConstants.VERTICAL));
         toolPanel.add(new JLabel("Цвет:"));
         toolPanel.add(colorComboBox);
@@ -94,6 +96,10 @@ public class Main extends JFrame {
             updateButtonStates();
         });
         
+        cropButton.addActionListener(e -> {
+            drawPanel.cropSelection();
+        });
+        
         // Кнопки файловых операций
         newButton.addActionListener(e -> createNewCanvas());
         saveButton.addActionListener(e -> saveImage());
@@ -113,6 +119,7 @@ public class Main extends JFrame {
         pencilButton.setBackground(currentTool.equals("pencil") ? Color.LIGHT_GRAY : null);
         eraserButton.setBackground(currentTool.equals("eraser") ? Color.LIGHT_GRAY : null);
         selectButton.setBackground(currentTool.equals("select") ? Color.LIGHT_GRAY : null);
+        cropButton.setBackground(null);
         
         drawPanel.setCurrentTool(currentTool);
     }
@@ -251,9 +258,11 @@ public class Main extends JFrame {
                 @Override
                 public void mouseReleased(MouseEvent e) {
                     if (currentTool.equals("select") && selectionRect != null) {
-                        System.out.println("Выделена область: " + selectionRect);
+                        // Гарантируем, что выделение имеет положительные размеры
+                        if (selectionRect.width > 0 && selectionRect.height > 0) {
+                            System.out.println("Выделена область: " + selectionRect);
+                        }
                     }
-                    selectionRect = null;
                     repaint();
                 }
             });
@@ -303,7 +312,8 @@ public class Main extends JFrame {
             g.drawImage(canvas, 0, 0, null);
             
             // Рисование выделения
-            if (currentTool.equals("select") && selectionRect != null) {
+            if (currentTool.equals("select") && selectionRect != null && 
+                selectionRect.width > 0 && selectionRect.height > 0) {
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setColor(new Color(0, 120, 215, 50));
                 g2.fill(selectionRect);
@@ -319,6 +329,7 @@ public class Main extends JFrame {
             g2d.setColor(Color.WHITE);
             g2d.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
             g2d.setColor(currentColor != null ? currentColor : Color.BLACK);
+            selectionRect = null;
             repaint();
         }
 
@@ -328,12 +339,77 @@ public class Main extends JFrame {
 
         public void openImage(File file) throws IOException {
             BufferedImage image = ImageIO.read(file);
-            g2d.drawImage(image, 0, 0, getWidth(), getHeight(), null);
+            // Создаем новый холст размером с открываемое изображение
+            canvas = new BufferedImage(image.getWidth(), image.getHeight(), BufferedImage.TYPE_INT_ARGB);
+            g2d = canvas.createGraphics();
+            g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+            g2d.drawImage(image, 0, 0, null);
+            setPreferredSize(new Dimension(image.getWidth(), image.getHeight()));
+            revalidate();
+            selectionRect = null;
             repaint();
+        }
+
+        public void cropSelection() {
+            if (selectionRect == null || selectionRect.width <= 0 || selectionRect.height <= 0) {
+                JOptionPane.showMessageDialog(Main.this, 
+                    "Сначала выделите область для обрезки с помощью инструмента 'Выделение'", 
+                    "Нет выделения", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+
+            int result = JOptionPane.showConfirmDialog(Main.this, 
+                "Обрезать изображение по выделенной области? Это действие нельзя отменить.", 
+                "Подтверждение обрезки", JOptionPane.YES_NO_OPTION);
+            
+            if (result == JOptionPane.YES_OPTION) {
+                try {
+                    // Создаем новое изображение размером с выделенную область
+                    BufferedImage croppedImage = new BufferedImage(
+                        selectionRect.width, selectionRect.height, BufferedImage.TYPE_INT_ARGB);
+                    
+                    Graphics2D g2dCropped = croppedImage.createGraphics();
+                    g2dCropped.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    
+                    // Копируем выделенную область в новое изображение
+                    g2dCropped.drawImage(canvas, 
+                        0, 0, selectionRect.width, selectionRect.height,
+                        selectionRect.x, selectionRect.y, 
+                        selectionRect.x + selectionRect.width, selectionRect.y + selectionRect.height,
+                        null);
+                    g2dCropped.dispose();
+                    
+                    // Заменяем текущий холст обрезанным изображением
+                    canvas = croppedImage;
+                    g2d = canvas.createGraphics();
+                    g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                    
+                    // Обновляем размер панели
+                    setPreferredSize(new Dimension(selectionRect.width, selectionRect.height));
+                    revalidate();
+                    
+                    selectionRect = null;
+                    repaint();
+                    
+                    JOptionPane.showMessageDialog(Main.this, 
+                        "Изображение успешно обрезано!", 
+                        "Обрезка завершена", JOptionPane.INFORMATION_MESSAGE);
+                        
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(Main.this, 
+                        "Ошибка при обрезке: " + ex.getMessage(), 
+                        "Ошибка", JOptionPane.ERROR_MESSAGE);
+                }
+            }
         }
 
         public void setCurrentTool(String tool) {
             this.currentTool = tool;
+            if (tool.equals("select")) {
+                setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
+            } else {
+                setCursor(Cursor.getPredefinedCursor(Cursor.DEFAULT_CURSOR));
+            }
         }
 
         public void setCurrentColor(Color color) {
